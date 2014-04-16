@@ -1,12 +1,18 @@
-from django.conf.urls import patterns, include, url
-
+from django.conf.urls import include
+from django.conf.urls import patterns
+from django.conf.urls import url
 from django.contrib import admin
+
+
 admin.autodiscover()
 
+# Admin...
 urlpatterns = patterns('',
-    # Examples:
-    # url(r'^$', 'cobwinner.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
-
     url(r'^admin/', include(admin.site.urls)),
+)
+
+# Main...
+urlpatterns += patterns('cobwinner.views',
+    url(r'^(?P<code>\w{2}\d{2}\w)$', 'landing', name='landing'),
+    url(r'^prizes$', 'prizes', name='prizes'),
 )
