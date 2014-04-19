@@ -68,12 +68,13 @@ class Address(models.Model):
 
 
 class Bank(models.Model):
-    name = models.SlugField(max_length=150)
-    display_name = models.CharField(max_length=150)
+    name = models.CharField(max_length=150)
+    branch_name = models.CharField(max_length=150)
     address = models.ForeignKey(Address)
+    phone_number = PhoneNumberField()
 
     def __unicode__(self):
-        return self.display_name
+        return '%s, %s' % (self.name, self.branch_name)
 
 
 class BankService(models.Model):
