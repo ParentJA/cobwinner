@@ -7,6 +7,10 @@ import os
 from prize.models import Prize
 from prize.models import PrizeType
 
+import random
+
+import string
+
 
 PATH = os.path.abspath(os.path.join(os.path.dirname(settings.BASE_DIR), '.'))
 
@@ -37,14 +41,18 @@ def create_prizes():
 
     prizes = json.loads(data)
 
-    for prize_type in prizes.keys():
-        num_prizes = int(prizes.get(prize_type))
+    for key in prizes.keys():
+        print 'Prize type: %s' % key
+
+        num_prizes = int(prizes.get(key))
+
+        print 'Num prizes: %d' % num_prizes
+
+        prize_type = PrizeType.objects.get(name=key)
 
         for i in range(num_prizes):
-            prize_type = PrizeType.objects.get(name=prize_type)
-
             # Generate random code using guidelines...
-            code = None
+            code = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(20))
 
             Prize.objects.create(type=prize_type, code=code)
 

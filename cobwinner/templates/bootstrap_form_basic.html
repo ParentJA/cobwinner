@@ -1,0 +1,31 @@
+{% load is_checkbox %}
+
+{% comment %}
+    Make sure to add the 'form-control' class to all form widgets.
+{% endcomment %}
+
+{% for field in form.visible_fields %}
+    {% if field|is_checkbox %}
+        <div class="checkbox">
+            <label>
+                {{ field }} {{ field.label }}
+            </label>
+        </div>
+    {% else %}
+        {% if field.errors %}
+            <div class="form-group has-error has-feedback">
+                {{ field.label_tag }}
+                {{ field }}
+                <span class="glyphicon glyphicon-remove form-control-feedback"></span>
+                <span class="help-block">
+                    {{ field.errors|join:', ' }}
+                </span>
+            </div>
+        {% else %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+            </div>
+        {% endif %}
+    {% endif %}
+{% endfor %}

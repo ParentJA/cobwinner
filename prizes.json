@@ -1,11 +1,11 @@
 {
-    "1000-gift-card": 0
-    "apple-ipad": 0
-    "keurig-coffee-maker": 0
-    "5-music-downloads": 0
-    "movie-tickets": 0
-    "25-gift-card": 0
-    "tote-bag": 0
-    "baseball-hat": 0
-    "mobile-wallet": 0
+    "1000-gift-card": 1,
+    "apple-ipad": 5,
+    "keurig-coffee-maker": 10,
+    "5-music-downloads": 500,
+    "movie-tickets": 500,
+    "25-gift-card": 100,
+    "tote-bag": 1000,
+    "baseball-hat": 1000,
+    "mobile-wallet": 500
 }

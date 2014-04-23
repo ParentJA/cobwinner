@@ -1,0 +1,10 @@
+{% comment %}
+
+{% endcomment %}
+
+{% for error in form.non_field_errors %}
+    <div class="alert alert-danger alert-dismissable">
+        <button class="close" type="button" data-dismiss="alert">&times;</button>
+        {{ error|safe }}
+    </div>
+{% endfor %}

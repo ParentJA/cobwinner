@@ -12,12 +12,22 @@ def prize_retrieval(request, code):
         form = PrizeRetrievalForm(request.POST)
 
         if form.is_valid():
-            pass
+            if not form.participant_exists():
+                form.retrieve_prize()
+
+                return render(request, 'prize/prize_redemption_success.html')
+
+            else:
+                return render(request, 'prize/prize_redemption_failure.html', {
+                    'reason': 'participant'
+                })
+
 
     else:
         form = PrizeRetrievalForm()
 
     return render(request, 'prize/prize_retrieval.html', {
+        'code': code,
         'form': form
     })
 
