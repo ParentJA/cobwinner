@@ -1,17 +1,10 @@
-from django.conf.urls import include
-from django.conf.urls import patterns
-from django.conf.urls import url
+# Django imports.
 from django.contrib import admin
+from django.urls import include, path
 
+__author__ = 'Jason Parent'
 
-admin.autodiscover()
-
-# Admin...
-urlpatterns = patterns('',
-    url(r'^admin/', include(admin.site.urls)),
-)
-
-# Prize...
-urlpatterns += patterns('',
-    url(r'^', include('prize.urls')),
-)
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('prize.urls')),
+]

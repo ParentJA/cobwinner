@@ -13,13 +13,12 @@
         </div>
     {% else %}
         {% if field.errors %}
-            <div class="form-group has-error has-feedback">
+            <div class="form-group">
                 {{ field.label_tag }}
                 {{ field }}
-                <span class="glyphicon glyphicon-remove form-control-feedback"></span>
-                <span class="help-block">
+                <small class="form-text text-muted">
                     {{ field.errors|join:', ' }}
-                </span>
+                </small>
             </div>
         {% else %}
             <div class="form-group">

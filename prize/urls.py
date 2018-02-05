@@ -1,10 +1,17 @@
-from django.conf.urls import patterns
-from django.conf.urls import url
+# Django imports.
+from django.urls import path, re_path
+from django.views.generic.base import TemplateView
 
+# Local imports.
+from .views import PrizeTypeListView, PrizeRedemptionView, PrizeReportView, PrizeRetrievalView
 
-urlpatterns = patterns('prize.views',
-    url(r'^(?P<code>\w{2}\d{2}\w)$', 'prize_retrieval', name='prize_retrieval'),
-    url(r'^redeem$', 'prize_redemption', name='prize_redemption'),
-    url(r'^list$', 'prize_list', name='prize_list'),
-    url(r'^report$', 'prize_report', name='prize_report'),
-)
+urlpatterns = [
+    path('prize-type/list/', PrizeTypeListView.as_view(), name='prize-type-list'),
+    path('prize/redeem/success/',
+         TemplateView.as_view(template_name='prize/prize_redemption_success.html'), name='prize-redeem-success'),
+    re_path(r'prize/redeem/', PrizeRedemptionView.as_view(), name='prize-redeem'),
+    path('prize/report/', PrizeReportView.as_view(), name='prize-report'),
+    path('prize/retrieve/success/<str:code>/',
+         TemplateView.as_view(template_name='prize/prize_retrieval_success.html'), name='prize-retrieve-success'),
+    path('prize/retrieve/', PrizeRetrievalView.as_view(), name='prize-retrieve'),
+]

@@ -1,61 +1,71 @@
-from django.shortcuts import HttpResponse
-from django.shortcuts import render
+# Django imports.
+from django.db.models import Q
+from django.urls import reverse, reverse_lazy
+from django.utils.timezone import now
+from django.views.generic import TemplateView
+from django.views.generic.edit import FormView
+from django.views.generic.list import ListView
 
-from prize.forms import PrizeRedemptionForm
-from prize.forms import PrizeRetrievalForm
-
-from prize.models import PrizeType
-
-
-def prize_retrieval(request, code):
-    if request.method == 'POST':
-        form = PrizeRetrievalForm(request.POST)
-
-        if form.is_valid():
-            if not form.participant_exists():
-                form.retrieve_prize()
-
-                return render(request, 'prize/prize_redemption_success.html')
-
-            else:
-                return render(request, 'prize/prize_redemption_failure.html', {
-                    'reason': 'participant'
-                })
+# Local imports.
+from prize.models import Address, Participant, Prize, PrizeType
+from prize.forms import PrizeRedemptionForm, PrizeRetrievalForm
 
 
-    else:
-        form = PrizeRetrievalForm()
+class PrizeRetrievalView(FormView):
+    form_class = PrizeRetrievalForm
+    template_name = 'prize/prize_retrieval.html'
 
-    return render(request, 'prize/prize_retrieval.html', {
-        'code': code,
-        'form': form
-    })
+    def form_valid(self, form):
+        # Pick random prize.
+        prize = Prize.objects.filter(retrieved_ts__isnull=True).order_by('?')[0]
+        prize.retrieved_ts = now()
+        prize.save()
+
+        address = Address.objects.create(
+            address1=form.cleaned_data.get('address1'),
+            address2=form.cleaned_data.get('address2'),
+            city=form.cleaned_data.get('city'),
+            state=form.cleaned_data.get('state'),
+            zip_code=form.cleaned_data.get('zip_code')
+        )
+
+        participant = Participant.objects.create(
+            given_name=form.cleaned_data.get('given_name'),
+            family_name=form.cleaned_data.get('family_name'),
+            address=address,
+            phone=form.cleaned_data.get('phone'),
+            email=form.cleaned_data.get('email'),
+            prize=prize
+        )
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        form = self.get_form(self.get_form_class())
+        participant = Participant.objects.get(email=form.data['email'])
+        return reverse('prize-retrieve-success', kwargs={'code': participant.prize.code})
 
 
-def prize_redemption(request):
-    if request.method == 'POST':
-        form = PrizeRedemptionForm(request.POST)
+class PrizeRedemptionView(FormView):
+    form_class = PrizeRedemptionForm
+    template_name = 'prize/prize_redemption.html'
+    success_url = reverse_lazy('prize-redeem-success')
 
-        if form.is_valid():
-            pass
+    def form_valid(self, form):
+        participant = Participant.objects.get(
+            Q(email=form.cleaned_data.get('email')) |
+            Q(phone=form.cleaned_data.get('phone'))
+        )
+        participant.prize.redeemed_ts = now()
+        participant.prize.save()
 
-    else:
-        form = PrizeRedemptionForm()
-
-    return render(request, 'prize/prize_redemption.html', {
-        'form': form
-    })
-
-
-def prize_list(request):
-    prize_types = PrizeType.objects.all()
-
-    return render(request, 'prize/prize_list.html', {
-        'prize_types': prize_types
-    })
+        return super().form_valid(form)
 
 
-def prize_report(request):
-    return render(request, 'prize/prize_report.html', {
+class PrizeTypeListView(ListView):
+    model = PrizeType
+    template_name = 'prize/prize_type_list.html'
 
-    })
+
+class PrizeReportView(TemplateView):
+    template_name = 'prize/prize_report.html'

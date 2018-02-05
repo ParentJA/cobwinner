@@ -1,0 +1,32 @@
+{% extends 'prize/base.html' %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1>Check this out!</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-8">
+                <p class="lead">You will win one of these awesome prizes:</p>
+                <ul id="prize-types-list">
+                    {% for prize_type in object_list %}
+                        <li>{{ prize_type.display_name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-lg-4">
+                (Address)
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-8">
+                {% include 'prize/terms_of_service.html' %}
+            </div>
+            <div class="col-lg-4">
+                (Capital One Bank logo)
+            </div>
+        </div>
+    </div>
+{% endblock content %}

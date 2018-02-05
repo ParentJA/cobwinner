@@ -1,82 +1,85 @@
+# Django imports.
 from django import forms
 from django.db.models import Q
 
-from localflavor.us.forms import USPhoneNumberField
-from localflavor.us.forms import USStateField
-from localflavor.us.forms import USStateSelect
-from localflavor.us.forms import USZipCodeField
+# Third-party imports.
+from localflavor.us.forms import USStateField, USStateSelect, USZipCodeField
+from phonenumber_field.formfields import PhoneNumberField
 
-from prize.models import Address
-from prize.models import Participant
-from prize.models import Prize
-
-import random
-
-import re
-
-
-ZIP_CODE_PATTERN = r'\d{5}(-\d{4})?'
+# Local imports.
+from prize.models import Address, Participant, Prize
 
 
 class PrizeRetrievalForm(forms.Form):
     given_name = forms.CharField(max_length=50)
     family_name = forms.CharField(max_length=50)
-    address_line_1 = forms.CharField(max_length=150)
-    address_line_2 = forms.CharField(max_length=150)
+    address1 = forms.CharField(max_length=150)
+    address2 = forms.CharField(max_length=150, required=False)
     city = forms.CharField(max_length=50)
     state = USStateField(widget=USStateSelect)
     zip_code = USZipCodeField()
-    email_address = forms.EmailField()
-    phone_number = USPhoneNumberField()
-    method = forms.CharField(widget=forms.HiddenInput(attrs={'value': 'email'}), initial='email')
+    email = forms.EmailField()
+    phone = PhoneNumberField()
 
     def __init__(self, *args, **kwargs):
-        super(PrizeRetrievalForm, self).__init__(*args, **kwargs)
-
+        super().__init__(*args, **kwargs)
         for key in self.fields.keys():
             self.fields[key].widget.attrs['class'] = 'form-control'
 
     def clean(self):
-        cleaned_data = super(PrizeRetrievalForm, self).clean()
+        cleaned_data = super().clean()
 
-        if cleaned_data.get('zip_code') is None:
-            raise forms.ValidationError('The zip code must be in one of these formats: ##### or #####-####.')
+        # Check if prizes exist.
+        if not Prize.objects.filter(retrieved_ts__isnull=True).exists():
+            raise forms.ValidationError('All prizes have been retrieved.')
 
-        return cleaned_data
-
-    def participant_exists(self):
-        return Participant.objects.filter(
-            Q(email_address=self.cleaned_data.get('email_address')) |
-            Q(phone_number=self.cleaned_data.get('phone_number'))
-        ).exists()
-
-    def retrieve_prize(self):
-        cleaned_data = self.cleaned_data
-
-        address, created = Address.objects.get_or_create(
-            address_line_1=cleaned_data.get('address_line_1'),
-            address_line_2=cleaned_data.get('address_line_2'),
+        # Check if participant already exists.
+        address = Address.objects.filter(
+            address1=cleaned_data.get('address1'),
             city=cleaned_data.get('city'),
             state=cleaned_data.get('state'),
             zip_code=cleaned_data.get('zip_code')
-        )
+        ).exists()
 
-        participant = Participant(
-            given_name=cleaned_data.get('given_name'),
-            family_name=cleaned_data.get('family_name'),
-            address=address,
-            phone_number=cleaned_data.get('phone_number'),
-            email_address=cleaned_data.get('email_address')
-        )
+        if address:
+            raise forms.ValidationError('You have already registered.')
 
-        # TODO: Make sure prizes still exist...
-        prizes = Prize.objects.exclude(date_retrieved__isnull=False)
-        prize = random.choice(prizes)
-        prize.retrieve(participant)
+        participant = Participant.objects.filter(
+            Q(email=cleaned_data.get('email')) |
+            Q(phone=cleaned_data.get('phone'))
+        ).exists()
 
-        participant.save()
+        if participant:
+            raise forms.ValidationError('You have already registered.')
 
 
 class PrizeRedemptionForm(forms.Form):
+    email = forms.EmailField(required=False)
+    phone = PhoneNumberField(required=False)
+    code = forms.CharField(max_length=14)
+
     def __init__(self, *args, **kwargs):
-        pass
+        super().__init__(*args, **kwargs)
+        for key in self.fields.keys():
+            self.fields[key].widget.attrs['class'] = 'form-control'
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # User must specify either an email or a phone.
+        if not cleaned_data.get('email') and not cleaned_data.get('phone'):
+            raise forms.ValidationError('You must specify either an email or a phone.')
+
+        # Check prize.
+        try:
+            participant = Participant.objects.get(
+                Q(email=self.cleaned_data.get('email')) |
+                Q(phone=self.cleaned_data.get('phone'))
+            )
+        except Participant.DoesNotExist:
+            raise forms.ValidationError('A participant with that email or phone does not exist.')
+        else:
+            if participant.prize.code != self.cleaned_data.get('code'):
+                raise forms.ValidationError('Incorrect code.')
+            if participant.prize.is_redeemed:
+                raise forms.ValidationError('Prize is already redeemed.')
